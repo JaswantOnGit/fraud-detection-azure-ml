@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Credit Card Fraud Detection — Azure ML Architecture</title>
+<style>
+  :root{
+    --navy-950:#060D1A;
+    --navy-900:#0B1F3A;
+    --navy-800:#132A52;
+    --navy-700:#1B3766;
+    --line:#28406E;
+    --amber:#F5A623;
+    --amber-soft:rgba(245,166,35,0.14);
+    --green:#34D399;
+    --green-soft:rgba(52,211,153,0.14);
+    --ice:#EAF0FA;
+    --slate:#8CA3C9;
+    --mono:'Courier New', 'DejaVu Sans Mono', monospace;
+    --sans:'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:#04070E;
+    font-family:var(--sans);
+    color:var(--ice);
+  }
+  body{
+    display:flex;
+    justify-content:center;
+    padding:40px 16px;
+  }
+  .canvas{
+    width:1200px;
+    max-width:100%;
+    background:
+      radial-gradient(1200px 500px at 15% -10%, rgba(245,166,35,0.08), transparent 60%),
+      radial-gradient(900px 500px at 100% 110%, rgba(52,211,153,0.08), transparent 55%),
+      linear-gradient(180deg, var(--navy-950), #04070E 90%);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:44px 48px 36px;
+    position:relative;
+    overflow:hidden;
+  }
+  .canvas::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(234,240,250,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(234,240,250,0.025) 1px, transparent 1px);
+    background-size:28px 28px;
+    pointer-events:none;
+  }
+
+  /* ---- Header ---- */
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.16em;
+    color:var(--amber);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--amber); margin-right:8px;}
+  h1{
+    font-size:27px;
+    font-weight:700;
+    line-height:1.25;
+    letter-spacing:-0.01em;
+    max-width:820px;
+  }
+  h1 span{color:var(--slate); font-weight:500;}
+  .subhead{
+    margin-top:8px;
+    font-size:13.5px;
+    color:var(--slate);
+    max-width:760px;
+    line-height:1.5;
+  }
+  .meta-strip{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+  }
+  .meta-chip{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ice);
+    background:var(--navy-800);
+    border:1px solid var(--line);
+    padding:6px 12px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    margin-right:10px;
+    margin-bottom:10px;
+  }
+  .meta-chip .ico{margin-right:6px;}
+  .meta-chip b{color:var(--green); font-weight:600;}
+
+  /* ---- Pipeline ---- */
+  .pipeline{
+    position:relative;
+    margin-top:40px;
+    display:flex;
+    align-items:stretch;
+    gap:0;
+  }
+  .stage{
+    flex:1;
+    min-width:0;
+    background:var(--navy-800);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 14px 14px;
+    position:relative;
+    z-index:2;
+  }
+  .stage-num{
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--slate);
+    letter-spacing:0.08em;
+  }
+  .stage-icon{
+    font-size:20px;
+    margin-top:6px;
+    margin-bottom:8px;
+    display:block;
+  }
+  .stage h3{
+    font-size:13px;
+    font-weight:600;
+    line-height:1.3;
+    margin-bottom:6px;
+    color:var(--ice);
+  }
+  .stage p{
+    font-size:11px;
+    color:var(--slate);
+    line-height:1.5;
+  }
+  .stage .tag{
+    display:inline-block;
+    margin-top:9px;
+    font-family:var(--mono);
+    font-size:9.5px;
+    padding:3px 7px;
+    border-radius:5px;
+    background:var(--amber-soft);
+    color:var(--amber);
+    border:1px solid rgba(245,166,35,0.35);
+  }
+  .stage.win .tag{
+    background:var(--green-soft);
+    color:var(--green);
+    border-color:rgba(52,211,153,0.4);
+  }
+  .connector{
+    width:26px;
+    flex:0 0 26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    z-index:1;
+  }
+  .connector::after{
+    content:"";
+    width:100%;
+    height:1px;
+    background:linear-gradient(90deg, var(--line), var(--slate) 50%, var(--line));
+  }
+  .connector .arrow{
+    position:absolute;
+    width:0; height:0;
+    border-top:4px solid transparent;
+    border-bottom:4px solid transparent;
+    border-left:6px solid var(--slate);
+  }
+
+  /* ---- Gate ---- */
+  .gate-wrap{
+    flex:0 0 74px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    z-index:2;
+  }
+  .gate{
+    width:64px; height:64px;
+    background:linear-gradient(135deg, #14351F, #0E2A19);
+    border:1.5px solid var(--green);
+    transform:rotate(45deg);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 6px rgba(52,211,153,0.06);
+  }
+  .gate span{
+    transform:rotate(-45deg);
+    font-family:var(--mono);
+    font-size:9px;
+    font-weight:700;
+    color:var(--green);
+    letter-spacing:0.04em;
+    text-align:center;
+  }
+
+  /* ---- Governance track ---- */
+  .gov-track{
+    margin-top:14px;
+    display:flex;
+    align-items:flex-start;
+    gap:0;
+  }
+  .gov-label-col{
+    flex:0 0 0;
+    width:0;
+  }
+  .gov-item{
+    flex:1;
+    min-width:0;
+    padding:0 14px;
+    text-align:center;
+  }
+  .gov-item .stem{
+    width:1px;
+    height:16px;
+    background:var(--line);
+    margin:0 auto 8px;
+  }
+  .gov-item .card{
+    background:transparent;
+    border:1px dashed var(--line);
+    border-radius:9px;
+    padding:9px 8px;
+  }
+  .gov-item .card p{
+    font-family:var(--mono);
+    font-size:9.5px;
+    color:var(--slate);
+    line-height:1.5;
+  }
+  .gov-item .card p b{color:var(--ice); font-weight:600;}
+  .gov-item.gate-col{flex:0 0 74px;}
+  .gov-item.spacer{flex:0 0 26px; padding:0;}
+
+  .gov-heading{
+    margin-top:34px;
+    display:flex;
+    align-items:center;
+  }
+  .gov-heading .rule{flex:1; height:1px; background:var(--line); margin-left:10px;}
+  .gov-heading span{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--amber);
+  }
+
+  /* ---- Footer ---- */
+  .footer{
+    margin-top:30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+  .footer .role{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--slate);
+  }
+  .footer .role b{color:var(--ice);}
+  .legend{
+    display:flex;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    margin-left:16px;
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--slate);
+  }
+  .swatch{width:9px;height:9px;border-radius:2px; margin-right:6px;}
+  .swatch.amber{background:var(--amber);}
+  .swatch.green{background:var(--green);}
+  .swatch.line{background:var(--slate);}
+
+  @media (max-width:880px){
+    .pipeline{flex-direction:column;}
+    .connector{width:auto; height:20px; flex:0 0 20px; transform:rotate(90deg);}
+    .gate-wrap{flex:0 0 auto; padding:6px 0;}
+    .gov-track{flex-direction:column; gap:10px;}
+    .gov-item, .gov-item.gate-col, .gov-item.spacer{flex:1 1 auto; padding:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <div class="eyebrow"><span class="dot"></span>PRODUCTION ARCHITECTURE · AZURE MACHINE LEARNING</div>
+  <h1>Credit Card Fraud Detection <span>— Real-Time Classification Pipeline</span></h1>
+  <p class="subhead">Delivery view as AI Project Manager: technical pipeline on top, governance checkpoints owned end-to-end underneath.</p>
+
+  <div class="meta-strip">
+    <div class="meta-chip">🎯 AUC Weighted&nbsp;<b>0.98846</b></div>
+    <div class="meta-chip">🧪 Trials&nbsp;<b>20</b></div>
+    <div class="meta-chip">🏆 Model&nbsp;<b>VotingEnsemble</b></div>
+    <div class="meta-chip">🚀 Instances&nbsp;<b>3</b></div>
+    <div class="meta-chip">🔌 Endpoint&nbsp;<b>REST / Real-Time</b></div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="pipeline">
+
+    <div class="stage">
+      <div class="stage-num">01</div>
+      <span class="stage-icon">🗂️</span>
+      <h3>Data Ingestion</h3>
+      <p>Tabular transaction dataset uploaded to Azure Blob Storage, registered as a versioned data asset.</p>
+      <span class="tag">workspaceblobstore</span>
+    </div>
+
+    <div class="connector"><div class="arrow"></div></div>
+
+    <div class="stage">
+      <div class="stage-num">02</div>
+      <span class="stage-icon">🖥️</span>
+      <h3>Compute Cluster</h3>
+      <p>Dedicated compute cluster provisioned for training, sized for cost vs. throughput.</p>
+      <span class="tag">Standard_F4s_v2</span>
+    </div>
+
+    <div class="connector"><div class="arrow"></div></div>
+
+    <div class="stage">
+      <div class="stage-num">03</div>
+      <span class="stage-icon">⚙️</span>
+      <h3>AutoML Training</h3>
+      <p>Classification job across candidate algorithms with automatic validation split and early termination.</p>
+      <span class="tag">20 max trials</span>
+    </div>
+
+    <div class="connector"><div class="arrow"></div></div>
+
+    <div class="stage win">
+      <div class="stage-num">04</div>
+      <span class="stage-icon">🏆</span>
+      <h3>Model Selection</h3>
+      <p>VotingEnsemble selected over top single models for stronger AUC and lower trial-to-trial variance.</p>
+      <span class="tag">0.98846 AUC</span>
+    </div>
+
+    <div class="gate-wrap">
+      <div class="gate"><span>QUALITY<br>GATE</span></div>
+    </div>
+
+    <div class="connector"><div class="arrow"></div></div>
+
+    <div class="stage">
+      <div class="stage-num">05</div>
+      <span class="stage-icon">🚀</span>
+      <h3>Real-Time Deployment</h3>
+      <p>Managed online endpoint, 3 instances for redundancy, key-based authentication.</p>
+      <span class="tag">REST scoring URI</span>
+    </div>
+
+    <div class="connector"><div class="arrow"></div></div>
+
+    <div class="stage">
+      <div class="stage-num">06</div>
+      <span class="stage-icon">📡</span>
+      <h3>Monitoring</h3>
+      <p>Inferencing data collection enabled to track live scoring data and support drift detection.</p>
+      <span class="tag">Drift-ready</span>
+    </div>
+
+  </div>
+
+  <!-- GOVERNANCE TRACK -->
+  <div class="gov-heading">
+    <span>🛡️ PM Governance Layer</span>
+    <div class="rule"></div>
+  </div>
+
+  <div class="gov-track">
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>Project Charter</b><br>scope · success criteria</p></div>
+    </div>
+    <div class="gov-item spacer"></div>
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>RAID Log</b><br>quota · access · drift risk</p></div>
+    </div>
+    <div class="gov-item spacer"></div>
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>RACI Matrix</b><br>DS · Risk · Ops sign-off</p></div>
+    </div>
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>Quality Gate<br>Scorecard</b></p></div>
+    </div>
+    <div class="gov-item gate-col"></div>
+    <div class="gov-item spacer"></div>
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>UAT Checklist</b><br>business sign-off</p></div>
+    </div>
+    <div class="gov-item spacer"></div>
+    <div class="gov-item">
+      <div class="stem"></div>
+      <div class="card"><p><b>Monitoring Plan</b><br>cost + drift review</p></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="role">Delivered as <b>AI Project Manager</b> · Azure Machine Learning Studio</div>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch amber"></span>Technical stage</div>
+      <div class="legend-item"><span class="swatch green"></span>Governance checkpoint</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
