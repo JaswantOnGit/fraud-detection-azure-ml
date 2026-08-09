@@ -1,4 +1,4 @@
-# 📋 Project Charter — Credit Card Fraud Detection
+# 📋 Project Charter - Credit Card Fraud Detection
 
 | Field | Detail |
 |---|---|
@@ -7,14 +7,14 @@
 | **Project Manager** | Jaswant Singh, AI Project Manager |
 | **Workspace** | `Credit-Fraud-Detection` (Azure Machine Learning, West US) |
 | **Start Date** | Aug 9, 2026 |
-| **Status** | Deployed — real-time endpoint live |
+| **Status** | Deployed - real-time endpoint live |
 
 ## 1. Business Problem
 
 The institution's existing fraud controls rely on manual transaction review and static, rule-based flags. This produces two costly failure modes:
 
-- **Missed fraud** — sophisticated patterns that don't trip a static rule go undetected until after the loss occurs.
-- **False positives** — legitimate customers get declined or flagged, damaging trust and increasing support volume.
+- **Missed fraud** - sophisticated patterns that don't trip a static rule go undetected until after the loss occurs.
+- **False positives** - legitimate customers get declined or flagged, damaging trust and increasing support volume.
 
 ## 2. Objective
 
@@ -33,7 +33,7 @@ Deliver a machine learning classification model that scores each transaction as 
 - Integration into the live payment-authorization system (handoff to Engineering)
 - Champion/challenger testing against the existing rules engine
 - Multi-region failover / high-availability endpoint architecture
-- Formal model risk management (SR 11-7 style) documentation — noted as a fast-follow
+- Formal model risk management (SR 11-7 style) documentation - noted as a fast-follow
 
 ## 4. Success Criteria
 
