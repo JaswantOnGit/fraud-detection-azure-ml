@@ -1,4 +1,4 @@
-# 🔁 RACI Matrix — Credit Card Fraud Detection
+# 🔁 RACI Matrix - Credit Card Fraud Detection
 
 **R** = Responsible · **A** = Accountable · **C** = Consulted · **I** = Informed
 
@@ -19,6 +19,6 @@
 
 ## Notes
 
-- **Risk & Compliance** sign-off is called out explicitly at model promotion — in a real financial-services environment, a model touching fraud decisions does not go to production without this checkpoint, regardless of how strong the AUC score looks.
-- **Business Stakeholder** ownership of UAT reflects that a technically correct model is not the same as a business-approved one — the fraud operations team validating real transaction scenarios is what actually de-risks go-live.
+- **Risk & Compliance** sign-off is called out explicitly at model promotion - in a real financial-services environment, a model touching fraud decisions does not go to production without this checkpoint, regardless of how strong the AUC score looks.
+- **Business Stakeholder** ownership of UAT reflects that a technically correct model is not the same as a business-approved one - the fraud operations team validating real transaction scenarios is what actually de-risks go-live.
 - This matrix reflects how the project *would* be staffed and governed in a production financial-services setting. For this individual build, the AI Project Manager role executed the Data Science / ML Engineering and IT / Cloud Ops activities directly, with the RACI structure applied as the operating discipline.
